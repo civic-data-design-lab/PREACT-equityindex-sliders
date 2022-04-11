@@ -40,7 +40,7 @@
             /*background: grey*/;
             position: fixed;
             top:25px;
-            left:25px;
+            right:25px;
             border-radius: 7px;
             padding: 10px;
             opacity:  25%;
@@ -79,27 +79,36 @@
       const map = L.map('map').setView([39.9526, -75.1652], 11);
 
       // Adding Voyager Basemap
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png', {
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/light_nolabels/{z}/{x}/{y}.png', {
         maxZoom: 18
       }).addTo(map);
 
       // Adding Voyager Labels
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png', {
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/light_only_labels/{z}/{x}/{y}.png', {
         maxZoom: 18,
         zIndex: 10
       }).addTo(map);
 
       var client = new carto.Client({
-        apiKey: 'UQHcltEMOTdJRcwE4E6wNA',
+        apiKey: 'f12b67a7767f6824ad224bd0a7a5420f4c54723d',
         username: 'wesleywoo'
       });
 
-      const indexDataset = new carto.source.Dataset(`
-        equity_index
+      // add all index data
+      // const indexDataset = new carto.source.Dataset(`
+      //   equity_index
+      // `);
+
+      // add just index data "inside" CSSA area
+      const indexDataset = new carto.source.SQL(`
+        SELECT *
+          FROM equity_index
+          WHERE index_ != 0
       `);
+
       const indexStyle = new carto.style.CartoCSS(`
         #layer {
-          polygon-fill: ramp([i_index], (#009392, #71be83, #e9e29c, #ed9c72, #cf597e), quantiles);
+          polygon-fill: ramp([i_index], (#fbe6c5, #f2a28a, #dc7176, #b24b65, #70284a), quantiles);
         }
         #layer::outline {
           line-width: 1;
@@ -112,7 +121,91 @@
       });
 
 
-      client.addLayers([indexData]);
+      // add null data layer
+      const nullDataset = new carto.source.SQL(`
+        SELECT *
+          FROM equity_index
+          WHERE index_ = 0
+      `);
+
+      const nullStyle = new carto.style.CartoCSS(`
+        #layer {
+          polygon-fill: #dfdcdc;
+          polygon-opacity: 1;
+        }
+        #layer::outline {
+          line-width: 1;
+          line-color: #FFFFFF;
+          line-opacity: 0.5;
+        }
+      `);
+      const nullData = new carto.layer.Layer(nullDataset, nullStyle, {
+        featureOverColumns: []
+      });
+
+      // add CSSA layer
+      const cssaDataset = new carto.source.Dataset(`
+        combined_sewer_service_area
+      `);
+      const cssaStyle = new carto.style.CartoCSS(`
+        #layer {
+          polygon-fill: #826dba;
+          polygon-opacity: 0.05;
+        }
+        #layer::outline {
+          line-width: 3;
+          line-color: #0643ac;
+          line-opacity: 0.88;
+        }
+      `);
+      const cssaData = new carto.layer.Layer(cssaDataset, cssaStyle, {
+        featureOverColumns: []
+      });
+
+
+      // storefront improvement grants Dataset
+      const pointDataset = new carto.source.Dataset(`
+        storefront_improvement
+      `);
+
+      const pointStyle = new carto.style.CartoCSS(`
+        #layer {
+          marker-width: 7;
+          marker-fill: #00bf6c;
+          marker-fill-opacity: 0.9;
+          marker-allow-overlap: true;
+          marker-line-width: 1;
+          marker-line-color: #FFFFFF;
+          marker-line-opacity: 1;
+        }
+      `);
+      const pointData = new carto.layer.Layer(pointDataset, pointStyle, {
+        featureOverColumns: []
+      });
+
+      // urban agriculture Dataset
+      const heatDataset = new carto.source.Dataset(`
+        ppr_urban_agriculture_projects
+      `);
+
+      const heatStyle = new carto.style.CartoCSS(`
+        #layer {
+          marker-width: 7;
+          marker-fill: #e94dee;
+          marker-fill-opacity: 0.9;
+          marker-allow-overlap: true;
+          marker-line-width: 1;
+          marker-line-color: #FFFFFF;
+          marker-line-opacity: 1;
+        }
+      `);
+      const heatData = new carto.layer.Layer(heatDataset, heatStyle, {
+        featureOverColumns: []
+      });
+
+
+      // add data layers
+      client.addLayers([indexData, nullData, cssaData]);
 
       client.getLeafletLayer().addTo(map);
 
@@ -139,6 +232,10 @@
           console.log(Http.responseText);
           client.removeLayer(indexData);
           client.addLayer(indexData);
+          client.removeLayer(nullData);
+          client.addLayer(nullData);
+          client.removeLayer(cssaData);
+          client.addLayer(cssaData);
       };
 
       function refreshData() {
@@ -171,6 +268,17 @@
             console.log(Http.responseText);
             client.removeLayer(indexData);
             client.addLayer(indexData);
+            client.removeLayer(cssaData);
+            client.addLayer(cssaData);
+            client.removeLayer(pointData);
+            client.removeLayer(heatData);
+
+            if (pointLayerCheckbox.checked) {
+                client.addLayer(pointData);
+            }
+            if (heatLayerCheckbox.checked) {
+                client.addLayer(heatData);
+            }
         };
       }
 
@@ -274,6 +382,15 @@
             <span id="text-14"> 3 · vacant land index</span>
         </p>
 
+                <br>
+                <input type="checkbox" id="pointData" name="pointData">
+                <label for="pointData"> Show storefront improvement layer</label>
+
+                <br>
+                <input type="checkbox" id="heatData" name="heatData">
+                <label for="heatData"> Show urban agriculture layer</label>
+                <br>
+
         <button style="margin-top: 7px; padding: 5px;" onclick="refreshData()"> Submit Weights </button>
 
     </div>
@@ -316,6 +433,8 @@
         var text13 = document.getElementById("text-13");
         var text14 = document.getElementById("text-14");
 
+        var pointLayerCheckbox = document.getElementById("pointData");
+        var heatLayerCheckbox = document.getElementById("heatData");
 
 
 

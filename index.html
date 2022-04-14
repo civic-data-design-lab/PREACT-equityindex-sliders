@@ -90,7 +90,7 @@
       }).addTo(map);
 
       var client = new carto.Client({
-        apiKey: 'f12b67a7767f6824ad224bd0a7a5420f4c54723d',
+        apiKey: 'YBkcggjsCwl3hvcYDO7X7g',
         username: 'wesleywoo'
       });
 
@@ -254,7 +254,8 @@
             slider11.value + '.0 * i_canopy %2b ' + 
             slider12.value + '.0 * i_play %2b ' + 
             slider13.value + '.0 * i_imp %2b ' + 
-            slider14.value + '.0 * i_vacant' + ')'
+            slider14.value + '.0 * i_vacant %2b ' + 
+            slider15.value + '.0 * i_temp' + ')'
 
         console.log(new_value);
 
@@ -382,6 +383,13 @@
             <span id="text-14"> 3 · vacant land index</span>
         </p>
 
+        <p>
+            <div class="sliderbox">
+                <input type="range" id="slider-15" min="0" max="5" step="1">
+            </div>
+            <span id="text-15"> 3 · temperature index</span>
+        </p>
+
                 <br>
                 <input type="checkbox" id="pointData" name="pointData">
                 <label for="pointData"> Show storefront improvement layer</label>
@@ -413,6 +421,8 @@
 
         var slider13 = document.getElementById("slider-13");
         var slider14 = document.getElementById("slider-14");
+        var slider15 = document.getElementById("slider-15");
+
 
         var text1 = document.getElementById("text-1");
         var text2 = document.getElementById("text-2");
@@ -432,6 +442,8 @@
 
         var text13 = document.getElementById("text-13");
         var text14 = document.getElementById("text-14");
+        var text15 = document.getElementById("text-15");
+
 
         var pointLayerCheckbox = document.getElementById("pointData");
         var heatLayerCheckbox = document.getElementById("heatData");
@@ -492,6 +504,10 @@
 
         slider14.oninput = function() {
             text14.innerHTML = this.value + ' · vacant land index';
+        }
+
+        slider15.oninput = function() {
+            text15.innerHTML = this.value + ' · temperature index';
         }
 
 
